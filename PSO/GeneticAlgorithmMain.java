@@ -12,7 +12,8 @@ public class GeneticAlgorithmMain {
 
         while (currentBest < Config.TEST_THRESHOLD) {
             generationCount++;
-            currentPopulation.calculateAllFitness();
+            //currentPopulation.calculateAllFitness();
+            currentPopulation.calculateAllFitnessParallel();
 
             // Keep track of best dudes from this population
             currentPopulation.leaveHistory(generationCount);

@@ -21,15 +21,8 @@ public class Evolution {
             double pCross = Math.random();
 
             if (pCross <= Config.crossoverRate) {    
-                if (parent1.getFitness() > parent2.getFitness())
-                    newPopulation.addIndividual(parent1);
-                else newPopulation.addIndividual(parent2);
-
-                if (newPopulation.size() < Config.POPULATION) {
-                    Individual child = crossover(parent1, parent2);    
-                    newPopulation.addIndividual(child);
-                }
-                
+                Individual child = crossover(parent1, parent2);    
+                newPopulation.addIndividual(child);
             }
             else {
                 parent1.mutateOperation(); parent2.mutateOperation();

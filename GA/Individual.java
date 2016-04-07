@@ -1,5 +1,4 @@
-
-public class Individual {
+public class Individual implements Runnable {
     private double[] genes = new double[Config.NUM_OF_FEATURES];
     private AgentSkeleton agent;
     private double averageFitness = 0.0;
@@ -25,6 +24,10 @@ public class Individual {
         System.out.println();
     }
 
+    public double[] getGenes() {
+        return genes;
+    }
+    
     public double getGene(int i){
     	return genes[i];
     }
@@ -56,8 +59,19 @@ public class Individual {
         averageFitness = sumFitness / (double)Config.GAMES;
     }
 
+    @Override
+    public void run() {
+        if (agent == null) agent = new AgentSkeleton();
+        agent.setWeight(genes);
+        double sumFitness = 0.0;
+        for (int i = 0; i < Config.GAMES; i++) {
+            sumFitness += (double)agent.runSimulation();
+        }
+        averageFitness = sumFitness / (double)Config.GAMES;
+    }
+
     public double randomInitialValue() {
-        return Math.random() * 20.0 - 10.0;
+        return Math.random() * (Config.VALUE_RANGE * 2) - Config.VALUE_RANGE;
     }
 
     public void normalizeGenes() {
@@ -69,7 +83,7 @@ public class Individual {
     }
 
     public void mutateOperation(){
-        pointMutate();
+        mutate();
     }
 
     public void mutate() {
@@ -92,6 +106,6 @@ public class Individual {
     }
 
     private double randomMutation() {
-        return Math.random() * 4.0 - 2.0; // -0.2 -> 0.2
+        return Math.random() * (Config.VALUE_RANGE * 0.4) - Config.VALUE_RANGE * 0.2; // -0.2 -> 0.2
     }
 }

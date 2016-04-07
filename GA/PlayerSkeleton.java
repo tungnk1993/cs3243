@@ -1,10 +1,13 @@
 import java.util.Arrays;
 
 
-public class AgentSkeleton {
+public class PlayerSkeleton {
 	
 	double featureVector[] = new double[Config.NUM_OF_FEATURES];
-    double weightVector[] = new double[Config.NUM_OF_FEATURES];
+    double weightVector[] = {
+    -1.2963001096452644, -2.3758833467062472, -0.22409462477766917, -23.75606893369632,
+     -65.59970170005664, -3.256362072164978, -7.0179313648115205, 9.107776936109042
+    };
 	
     /*
 	 * FakeSateClass is a class which is similar to the State class. The reason to use such a class is 
@@ -254,21 +257,11 @@ public class AgentSkeleton {
     /*
      * Constructor: Use a set of weightVector to initialize the weightVector
      */
-    public AgentSkeleton(double[] _weightVector){
-    	for (int i = 0 ; i < Config.NUM_OF_FEATURES; i++ ){
-    		this.weightVector[i] = _weightVector[i];
-    	}
-    }
 
-    public AgentSkeleton(){
+    public PlayerSkeleton(){
     	//Do nothing is no parameters provided.
     }
     
-    public void setWeight(double[] _weightVector) {
-        for (int i = 0 ; i < Config.NUM_OF_FEATURES; i++ ){
-            this.weightVector[i] = _weightVector[i];
-        }   
-    }
 
 	//implement this function to have a working system
 	public int pickMove(State s, int[][] legalMoves) {
@@ -308,13 +301,20 @@ public class AgentSkeleton {
 		return finalScore;
 	}
 
-	public int runSimulation(){
+	public static void main(String[] args) {
 		State s = new State();
+		new TFrame(s);
+		PlayerSkeleton p = new PlayerSkeleton();
 		while(!s.hasLost()) {
-			s.makeMove(this.pickMove(s,s.legalMoves()));
+			s.makeMove(p.pickMove(s,s.legalMoves()));
+			s.draw();
+			s.drawNext(0,0);
+			try {
+				Thread.sleep(10);
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
 		}
-		return s.getRowsCleared();
+		System.out.println("You have completed "+s.getRowsCleared()+" rows.");
 	}
-	
-	
 }

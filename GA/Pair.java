@@ -19,6 +19,7 @@ public class Pair implements Comparable<Pair> {
 	public int compareTo(Pair anotherPair) {
 		double c = anotherPair.getValue() - this.value;
 		if (c > 0.0) return 1;
+		else if (c == 0.0) return 0;
 		else return -1;
 	}
 }

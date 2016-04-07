@@ -4,6 +4,9 @@ import java.io.FileOutputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
 
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+
 public class Population {
 
     Individual[] individuals;
@@ -29,6 +32,22 @@ public class Population {
         for (int i = 0; i < currentPopulation; i++)
             individuals[i].evaluateFitness();
         findFittest();
+    }
+
+    public void calculateAllFitnessParallel() {
+        ExecutorService executor = Executors.newFixedThreadPool(5);
+
+        for (int i = 0; i < currentPopulation; i++) {
+            executor.execute(individuals[i]);
+        }
+
+        executor.shutdown();
+        while (!executor.isTerminated()) {}
+        
+        
+        // need all parallel tasks to finish before this
+        findFittest();
+        
     }
 
     public void findFittest() {

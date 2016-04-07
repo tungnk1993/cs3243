@@ -1,13 +1,18 @@
 public class Config {
+    static boolean DEBUG = true;
+    
 	static final String outputFile = "test.txt";
 	static int NUM_OF_FEATURES = 8;
-	static int POPULATION = 100;
-	static int GAMES = 3;
+	static int POPULATION = 250;
+	static int GAMES = 5;
 	
-	static double crossoverRate = 0.7;
-    static double mutationRate = 0.20;
+    static int VALUE_RANGE = 10;
+    static int THREADS = 3;
+    
+	static double crossoverRate = 0.6;
+    static double mutationRate = 0.05;
 
-    static int tournamentSize = 10;
+    static int tournamentSize = 25;
     static double tournamentChance = 0.8;
     static boolean elitism = true;
     static double eliteFavor = 0.7;
