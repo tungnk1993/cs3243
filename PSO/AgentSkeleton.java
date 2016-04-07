@@ -71,6 +71,10 @@ public class AgentSkeleton implements Runnable{
     	private boolean lost;
     	private int turn;
     	private int clearedRowsLastTime; //The number of rows cleared by the last move.
+
+        private int landingHeight; // height of column of piece
+        private int pieceHeight; // height of last piece
+
         public FakeState(int nextPiece, int turn, int field[][], int top[]) {
             copyField(field);
             this.top = top.clone();
@@ -93,6 +97,9 @@ public class AgentSkeleton implements Runnable{
             for (int c = 1; c < pWidth[piece][orient]; c++) {
                 height = Math.max(height, top[slot + c] - pBottom[piece][orient][c]);
             }
+
+            landingHeight = height;
+            pieceHeight = pHeight[piece][orient];
 
             // check if game ended
             if (height + pHeight[piece][orient] >= ROWS) {
@@ -157,8 +164,26 @@ public class AgentSkeleton implements Runnable{
     	public int getColumnHeight(int columnID){
     		return top[columnID];
     	}
+
+        public int getLandingHeight() {
+            return landingHeight;
+        }
+
+        public int getPieceHeight() {
+            return pieceHeight;
+        }
     	
         // evaluators
+        public int getHolesSimple() {
+            int countHole = 0;
+
+            for (int j = 0; j < State.COLS; j++) {
+                for (int i = 0; i < top[j] - 1; i++)
+                    if ((field[i][j] == 0) && (field[i+1][j] != 0))
+                        countHole++;
+            }
+            return countHole;
+        }
     	public int getHoles(){
             int countHole = 0;
 
@@ -202,10 +227,11 @@ public class AgentSkeleton implements Runnable{
             {
                 int lastBlock = 1;
                 for (int j = 0; j < State.COLS; j++) {
-                    if (field[i][j] * lastBlock == 0) s++;
+                    if ((field[i][j] != lastBlock) && (field[i][j] * lastBlock == 0)) s++;
                     if (field[i][j] != 0) lastBlock = 1;
                     else lastBlock = 0;
                 }
+                if (lastBlock == 0) s++;
             }
             return s;
         }
@@ -215,7 +241,7 @@ public class AgentSkeleton implements Runnable{
             for (int c = 0; c < State.COLS; c++) {
                 int lastBlock = 1;
                 for (int r = 0; r < top[c]; r++) {
-                    if (field[r][c] * lastBlock == 0) s++;
+                    if ((field[r][c] != lastBlock) && (field[r][c] * lastBlock == 0)) s++;
                     if (field[r][c] != 0) lastBlock = 1;
                     else lastBlock = 0;
                 }
@@ -252,6 +278,50 @@ public class AgentSkeleton implements Runnable{
             }
             return s;
         }
+
+        public int getWellSums() {
+            int s = 0;
+
+            // left
+            for (int i = top[0] - 1; i >= 0; i--) {
+                if ((field[i][0] == 0) && (field[i][1] != 0)) {
+                    s++;
+                    for (int k = i - 1; k >= 0; k--) {
+                        if (field[k][0] == 0) s++;
+                        else break;
+                    }
+                }
+            }
+            
+            // middle
+            for (int j = 1; j < State.COLS - 1; j++) {
+                for (int i = top[j] - 1; i >= 0; i--) 
+                {
+                    if ((field[i][j] == 0) && (field[i][j-1] != 0) 
+                        && (field[i][j+1] != 0)) 
+                    {
+                        s++;
+                        for (int k = i - 1; k >= 0; k--) {
+                            if (field[k][j] == 0) s++;
+                            else break;
+                        }
+                    }
+                }
+            }
+
+            // right
+            for (int i = top[State.COLS - 1] - 1; i >= 0; i--) {
+                if ((field[i][State.COLS - 1] == 0) && (field[i][State.COLS - 2] != 0)) {
+                    s++;
+                    for (int k = i - 1; k >= 0; k--) {
+                        if (field[k][State.COLS - 1] == 0) s++;
+                        else break;
+                    }
+                }
+            }
+            return s;
+        }
+
     }
 	
     /*
@@ -295,14 +365,18 @@ public class AgentSkeleton implements Runnable{
 	 * Get all the corresponding feature values based on the state.
 	 */
 	private double evaluateState(FakeState tmpState) {
-		featureVector[0] = tmpState.getHoles();
-		featureVector[1] = tmpState.getSumColumnHeight();
-		featureVector[2] = tmpState.getSumDiffColumnHeight();
-		featureVector[3] = tmpState.getRowTransition();
-        featureVector[4] = tmpState.getColumnTransition();
-        featureVector[5] = tmpState.getHoleDepth();
-        featureVector[6] = tmpState.getRowWithHole();
-        featureVector[7] = tmpState.getClearedRows();
+        featureVector[0] = tmpState.getHolesSimple();
+		//featureVector[0] = tmpState.getHoles();
+        featureVector[1] = tmpState.getRowTransition();
+        featureVector[2] = tmpState.getColumnTransition();
+        featureVector[3] = tmpState.getWellSums();
+        featureVector[4] = tmpState.getClearedRows();
+        featureVector[5] = tmpState.getLandingHeight();
+
+        featureVector[6] = tmpState.getHoleDepth();
+        //featureVector[1] = tmpState.getSumColumnHeight();
+        //featureVector[2] = tmpState.getSumDiffColumnHeight();
+        //featureVector[6] = tmpState.getRowWithHole();
 
 		double finalScore = 0;
 		for (int i = 0; i < Config.NUM_OF_FEATURES; i++){

@@ -46,33 +46,35 @@ public class TestPlayerSkeleton {
 
 	public static int getRowTransition(int[] top, int[][] field) {
 		// count number of filled cells adjacent to empty cells
-		int s = 0;
-		int maxTop = 0;
-		for (int i = 0; i < State.COLS; i++) 
-			if (top[i] > maxTop) maxTop = top[i];
+        int s = 0;
+        int maxTop = 0;
+        for (int i = 0; i < State.COLS; i++) 
+            if (top[i] > maxTop) maxTop = top[i];
 
-		for (int i = 0; i < maxTop; i++)
-		{
-			for (int j = 0; j < State.COLS; j++)
-				if (field[i][j] == 0) {
-					if (j + 1 == State.COLS || field[i][j+1] != 0) s++;
-					if (j == 0 || field[i][j-1] != 0) s++;
-				}
-		}
-		return s;
+        for (int i = 0; i < maxTop; i++)
+        {
+            int lastBlock = 1;
+            for (int j = 0; j < State.COLS; j++) {
+                if ((field[i][j] != lastBlock) && (field[i][j] * lastBlock == 0)) s++;
+                if (field[i][j] != 0) lastBlock = 1;
+                else lastBlock = 0;
+            }
+            if (lastBlock == 0) s++;
+        }
+        return s;
 	}
 
 	public static int getColumnTransition(int[] top, int[][] field) {
 		int s = 0;
-		for (int c = 0; c < State.COLS; c++)
-			for (int r = 0; r < top[c]; r++)
-			{
-				if (field[r][c] == 0) {
-					if (r == 20 || field[r+1][c] != 0) s++;
-					if (r == 0 || field[r-1][c] != 0) s++;
-				}
-			}
-		return s;
+        for (int c = 0; c < State.COLS; c++) {
+            int lastBlock = 1;
+            for (int r = 0; r < top[c]; r++) {
+                if ((field[r][c] != lastBlock) && (field[r][c] * lastBlock == 0)) s++;
+                if (field[r][c] != 0) lastBlock = 1;
+                else lastBlock = 0;
+            }
+        }
+        return s;
 	}
 
 	public static int getHoleDepth(int[] top, int[][] field) {
@@ -85,22 +87,68 @@ public class TestPlayerSkeleton {
 					s += currentFilled;
 				}
 			}
-			System.out.println("Hole depth after Col " + c + " = " + s);
 		}
 		return s;
 	}
 
 	public static int getRowWithHole(int[] top, int[][] field) {
 		int s = 0;
-		for (int r = 0; r < State.ROWS; r++) {
-			boolean hasHole = false;
-			for (int c = 0; c < State.COLS; c++)
-				if (field[r][c] == 0) {
-					hasHole = true;
-					break;
+        for (int r = 0; r < State.ROWS; r++) {
+            boolean hasBlank = false;
+            boolean hasFilled = false;
+            for (int c = 0; c < State.COLS; c++) {
+                if (field[r][c] == 0) hasBlank = true;
+                else hasFilled = true;
+                if (hasFilled && hasBlank) break;
+            }
+                
+            if (hasFilled && hasBlank) s++;
+        }
+        return s;
+	}
+
+	public static int getWellSums(int[] top, int[][] field) {
+		int s = 0;
+
+		// left
+		for (int i = top[0] - 1; i >= 0; i--) {
+			if ((field[i][0] == 0) && (field[i][1] != 0)) {
+				s++;
+				for (int k = i - 1; k >= 0; k--) {
+					if (field[k][0] == 0) s++;
+					else break;
 				}
-			if (hasHole) s++;
+			}
 		}
+		System.out.println("Well sums after 0 = " + s);
+		// middle
+		for (int j = 1; j < State.COLS - 1; j++) {
+			for (int i = top[j] - 1; i >= 0; i--) 
+			{
+				if ((field[i][j] == 0) && (field[i][j-1] != 0) 
+					&& (field[i][j+1] != 0)) 
+				{
+					s++;
+					for (int k = i - 1; k >= 0; k--) {
+						if (field[k][j] == 0) s++;
+						else break;
+					}
+				}
+			}
+			System.out.println("Well sums after " + j + " = " + s);
+		}
+
+		// right
+		for (int i = top[State.COLS - 1] - 1; i >= 0; i--) {
+			if ((field[i][State.COLS - 1] == 0) && (field[i][State.COLS - 2] != 0)) {
+				s++;
+				for (int k = i - 1; k >= 0; k--) {
+					if (field[k][State.COLS - 1] == 0) s++;
+					else break;
+				}
+			}
+		}
+		System.out.println("Well sums final = " + s);
 		return s;
 	}
 
@@ -131,6 +179,7 @@ public class TestPlayerSkeleton {
             System.out.println("Col trans = " + getColumnTransition(t,f));
             System.out.println("Hole depth = " + getHoleDepth(t,f));
             System.out.println("Row w/ hole = " + getRowWithHole(t,f));
+            System.out.println("Well sums = " + getWellSums(t, f));
 			try {
 				Thread.sleep(300);
 			} catch (InterruptedException e) {

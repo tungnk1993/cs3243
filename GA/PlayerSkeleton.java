@@ -5,8 +5,12 @@ public class PlayerSkeleton {
 	
 	double featureVector[] = new double[Config.NUM_OF_FEATURES];
     double weightVector[] = {
-    -1.2963001096452644, -2.3758833467062472, -0.22409462477766917, -23.75606893369632,
-     -65.59970170005664, -3.256362072164978, -7.0179313648115205, 9.107776936109042
+    -9.832139418941225, 
+    -5.2999968294859798, 
+    -9.897074430597115, 
+    1.300957404717439,
+     2.6002092703694064,
+    -2.4243978262291028,
     };
 	
     /*
@@ -74,6 +78,10 @@ public class PlayerSkeleton {
     	private boolean lost;
     	private int turn;
     	private int clearedRowsLastTime; //The number of rows cleared by the last move.
+
+        private int landingHeight; // height of column of piece
+        private int pieceHeight; // height of last piece
+
         public FakeState(int nextPiece, int turn, int field[][], int top[]) {
             copyField(field);
             this.top = top.clone();
@@ -96,6 +104,9 @@ public class PlayerSkeleton {
             for (int c = 1; c < pWidth[piece][orient]; c++) {
                 height = Math.max(height, top[slot + c] - pBottom[piece][orient][c]);
             }
+
+            landingHeight = height;
+            pieceHeight = pHeight[piece][orient];
 
             // check if game ended
             if (height + pHeight[piece][orient] >= ROWS) {
@@ -161,6 +172,14 @@ public class PlayerSkeleton {
     		return top[columnID];
     	}
     	
+        public int getLandingHeight() {
+            return landingHeight;
+        }
+
+        public int getPieceHeight() {
+            return pieceHeight;
+        }
+
         // evaluators
     	public int getHoles(){
             int countHole = 0;
@@ -203,25 +222,27 @@ public class PlayerSkeleton {
 
             for (int i = 0; i < maxTop; i++)
             {
-                for (int j = 0; j < State.COLS; j++)
-                    if (field[i][j] == 0) {
-                        if (j + 1 == State.COLS || field[i][j+1] != 0) s++;
-                        if (j == 0 || field[i][j-1] != 0) s++;
-                    }
+                int lastBlock = 1;
+                for (int j = 0; j < State.COLS; j++) {
+                    if ((field[i][j] != lastBlock) && (field[i][j] * lastBlock == 0)) s++;
+                    if (field[i][j] != 0) lastBlock = 1;
+                    else lastBlock = 0;
+                }
+                if (lastBlock == 0) s++;
             }
             return s;
         }
 
         public int getColumnTransition() {
             int s = 0;
-            for (int c = 0; c < State.COLS; c++)
-                for (int r = 0; r < top[c]; r++)
-                {
-                    if (field[r][c] == 0) {
-                        if (r == 20 || field[r+1][c] != 0) s++;
-                        if (r == 0 || field[r-1][c] != 0) s++;
-                    }
+            for (int c = 0; c < State.COLS; c++) {
+                int lastBlock = 1;
+                for (int r = 0; r < top[c]; r++) {
+                    if ((field[r][c] != lastBlock) && (field[r][c] * lastBlock == 0)) s++;
+                    if (field[r][c] != 0) lastBlock = 1;
+                    else lastBlock = 0;
                 }
+            }
             return s;
         }
 
@@ -249,6 +270,49 @@ public class PlayerSkeleton {
                         break;
                     }
                 if (hasHole) s++;
+            }
+            return s;
+        }
+
+        public int getWellSums() {
+            int s = 0;
+
+            // left
+            for (int i = top[0] - 1; i >= 0; i--) {
+                if ((field[i][0] == 0) && (field[i][1] != 0)) {
+                    s++;
+                    for (int k = i - 1; k >= 0; k--) {
+                        if (field[k][0] == 0) s++;
+                        else break;
+                    }
+                }
+            }
+            
+            // middle
+            for (int j = 1; j < State.COLS - 1; j++) {
+                for (int i = top[j] - 1; i >= 0; i--) 
+                {
+                    if ((field[i][j] == 0) && (field[i][j-1] != 0) 
+                        && (field[i][j+1] != 0)) 
+                    {
+                        s++;
+                        for (int k = i - 1; k >= 0; k--) {
+                            if (field[k][j] == 0) s++;
+                            else break;
+                        }
+                    }
+                }
+            }
+
+            // right
+            for (int i = top[State.COLS - 1] - 1; i >= 0; i--) {
+                if ((field[i][State.COLS - 1] == 0) && (field[i][State.COLS - 2] != 0)) {
+                    s++;
+                    for (int k = i - 1; k >= 0; k--) {
+                        if (field[k][State.COLS - 1] == 0) s++;
+                        else break;
+                    }
+                }
             }
             return s;
         }
@@ -286,13 +350,16 @@ public class PlayerSkeleton {
 	 */
 	private double evaluateState(FakeState tmpState) {
 		featureVector[0] = tmpState.getHoles();
-		featureVector[1] = tmpState.getSumColumnHeight();
-		featureVector[2] = tmpState.getSumDiffColumnHeight();
-		featureVector[3] = tmpState.getRowTransition();
-        featureVector[4] = tmpState.getColumnTransition();
-        featureVector[5] = tmpState.getHoleDepth();
-        featureVector[6] = tmpState.getRowWithHole();
-        featureVector[7] = tmpState.getClearedRows();
+        featureVector[1] = tmpState.getRowTransition();
+        featureVector[2] = tmpState.getColumnTransition();
+        featureVector[3] = tmpState.getWellSums();
+        featureVector[4] = tmpState.getClearedRows();
+        featureVector[5] = tmpState.getLandingHeight() + (tmpState.getPieceHeight() - 1)/2;
+
+        //featureVector[3] = tmpState.getHoleDepth();
+        //featureVector[1] = tmpState.getSumColumnHeight();
+        //featureVector[2] = tmpState.getSumDiffColumnHeight();
+        //featureVector[6] = tmpState.getRowWithHole();
 
 		double finalScore = 0;
 		for (int i = 0; i < Config.NUM_OF_FEATURES; i++){
@@ -302,19 +369,28 @@ public class PlayerSkeleton {
 	}
 
 	public static void main(String[] args) {
-		State s = new State();
-		new TFrame(s);
-		PlayerSkeleton p = new PlayerSkeleton();
-		while(!s.hasLost()) {
-			s.makeMove(p.pickMove(s,s.legalMoves()));
-			s.draw();
-			s.drawNext(0,0);
-			try {
-				Thread.sleep(10);
-			} catch (InterruptedException e) {
-				e.printStackTrace();
-			}
-		}
-		System.out.println("You have completed "+s.getRowsCleared()+" rows.");
+        int averageTotal = 0;
+        int maxTotal = 0;
+        for (int i = 0; i < 100; i++) {
+            State s = new State();
+            //new TFrame(s);
+            PlayerSkeleton p = new PlayerSkeleton();
+            while(!s.hasLost()) {
+                s.makeMove(p.pickMove(s,s.legalMoves()));
+                //s.draw();
+                //s.drawNext(0,0);
+                /*
+                try {
+                    Thread.sleep(10);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+                */
+            }
+            System.out.println("You have completed "+s.getRowsCleared()+" rows.");
+            averageTotal += s.getRowsCleared();
+        }
+        System.out.println(averageTotal / 100.0);
+		
 	}
 }

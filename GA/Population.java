@@ -105,6 +105,7 @@ public class Population {
             writer.println("Overall best fitness = " + currentBest);
             writer.println("Overall Best vector: " + Arrays.toString(bestGenes));
             writer.println("--------------");
+            writer.println(Arrays.toString(Config.features));
             writer.println("GENERATION = " + generationCount + " | Generation Fittest = " + fittestValue);
             
             for (int i = 0; i < currentPopulation; i++)

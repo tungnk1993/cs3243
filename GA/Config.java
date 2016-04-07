@@ -2,7 +2,16 @@ public class Config {
     static boolean DEBUG = true;
     
 	static final String outputFile = "test.txt";
-	static int NUM_OF_FEATURES = 8;
+	static int NUM_OF_FEATURES = 6;
+    static String[] features = {
+                                    "countHoles",
+                                    "rowTrans",
+                                    "colTrans",
+                                    "wellSums",
+                                    "clearedRows",
+                                    "landingHeight+pieceHeight/2"
+                                };
+
 	static int POPULATION = 250;
 	static int GAMES = 5;
 	
