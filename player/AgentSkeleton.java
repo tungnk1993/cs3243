@@ -65,32 +65,6 @@ public class AgentSkeleton implements Runnable{
     		{{1,2,2},{3,2}},
     		{{2,2,1},{2,3}}
     	};
-
-        {
-        //for each piece type
-            for(int i = 0; i < N_PIECES; i++) {
-                //figure number of legal moves
-                int n = 0;
-                for(int j = 0; j < pOrients[i]; j++) {
-                    //number of locations in this orientation
-                    n += COLS+1-pWidth[i][j];
-                }
-                //allocate space
-                legalMoves[i] = new int[n][2];
-                //for each orientation
-                n = 0;
-                for(int j = 0; j < pOrients[i]; j++) {
-                    //for each slot
-                    for(int k = 0; k < COLS+1-pWidth[i][j];k++) {
-                        legalMoves[i][n][ORIENT] = j;
-                        legalMoves[i][n][SLOT] = k;
-                        n++;
-                    }
-                }
-            }
-        
-        }
-
     	private int[][] field = new int[ROWS][COLS];
     	private int[] top = new int[COLS];
     	private int nextPiece;
@@ -177,30 +151,12 @@ public class AgentSkeleton implements Runnable{
                 }
             }
             clearedRowsLastTime = rowsCleared;
-            lost = false;
             return true;
         }
         
-        public int[][] getlegalMoves(int pieceNumber) {
-            return legalMoves[pieceNumber];
-        }
-
     	public int[][] getField() {
     		return field;
     	}
-
-        public int[] getTop() {
-            return top;
-        }
-
-        public boolean getLost() {
-            return lost;
-        }
-
-        public int getTurnNumber() {
-            return turn;
-        }
-
     	public int getClearedRows(){
     		return clearedRowsLastTime;
     	}
@@ -403,63 +359,6 @@ public class AgentSkeleton implements Runnable{
 		}
 		return currentChoice;
 	}
-
-    public int pickMoveLookAhead(State s, int[][] legalMoves) {
-        int numOfChoice = legalMoves.length;
-        double maxValue = 0;
-        int currentChoice = -1;//-1 means have not choosed
-
-        for (int i = 0; i < numOfChoice; i++){
-            FakeState tmpState = new FakeState(s.getNextPiece(),s.getTurnNumber(),s.getField(),s.getTop());
-            
-            boolean alreadyLost = tmpState.makeMove(legalMoves[i][FakeState.ORIENT], legalMoves[i][FakeState.SLOT]);
-
-            double sumFitness = 0.0;
-            // for each piece to try for this tmpState, construct new second state with this piece
-            // get legal moves, pick best out of all Legal moves
-            // then sumFitness up, divide by N_PIECES.length
-            for (int j = 0; j < State.N_PIECES; j++) {
-                if (!alreadyLost) {
-                    int[][] secondLegalMoves = tmpState.getlegalMoves(j);
-                    double maxSecondValue = 0.0;
-                    int secondChoice = -1;
-                    for (int k = 0; k < secondLegalMoves.length; k++) {
-                        FakeState secondState = new FakeState(j, tmpState.getTurnNumber(), tmpState.getField(), tmpState.getTop());
-                        secondState.makeMove(secondLegalMoves[k][FakeState.ORIENT], secondLegalMoves[k][FakeState.SLOT]);
-                        double secondTmpValue = evaluateState(secondState);
-                        if (secondTmpValue > maxSecondValue || secondChoice == -1) {
-                            secondChoice = k;
-                            maxSecondValue = secondTmpValue;
-                        }
-                    }
-                    /*
-                    if (j == 0) sumFitness = maxSecondValue;
-                    else if (maxSecondValue < sumFitness) sumFitness = maxSecondValue;
-                    */
-                    sumFitness += maxSecondValue;
-                }
-            }
-
-            sumFitness = sumFitness / State.N_PIECES;
-            double tmpValue = evaluateState(tmpState);
-            //if (tmpValue < sumFitness) sumFitness = tmpValue;
-            sumFitness += tmpValue;
-            //sumFitness = tmpValue;
-            //sumFitness /= 2;
-            if (sumFitness > maxValue || currentChoice == -1){
-                currentChoice = i;
-                maxValue = sumFitness;
-            }
-            /*
-            double tmpValue = evaluateState(tmpState);
-            if (tmpValue > maxValue || currentChoice == -1){
-                currentChoice = i;
-                maxValue = tmpValue;
-            }
-            */
-        }
-        return currentChoice;
-    }
 	
 	/*
 	 * The Heuristics function
@@ -473,8 +372,8 @@ public class AgentSkeleton implements Runnable{
         featureVector[3] = tmpState.getWellSums();
         featureVector[4] = tmpState.getClearedRows();
         featureVector[5] = tmpState.getLandingHeight();
+
         featureVector[6] = tmpState.getHoleDepth();
-        featureVector[7] = tmpState.getLost() ? -1000 : 1000;
         //featureVector[1] = tmpState.getSumColumnHeight();
         //featureVector[2] = tmpState.getSumDiffColumnHeight();
         //featureVector[6] = tmpState.getRowWithHole();

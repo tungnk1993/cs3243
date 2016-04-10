@@ -106,6 +106,6 @@ public class Individual implements Runnable {
     }
 
     private double randomMutation() {
-        return Math.random() * (Config.VALUE_RANGE * 0.4) - Config.VALUE_RANGE * 0.2; // -0.2 -> 0.2
+        return Math.random() * (Config.VALUE_RANGE * 0.1) - Config.VALUE_RANGE * 0.05; // -0.2 -> 0.2
     }
 }

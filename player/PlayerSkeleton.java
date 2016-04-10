@@ -1,11 +1,20 @@
 import java.util.Arrays;
 
 
-public class AgentSkeleton implements Runnable{
+public class PlayerSkeleton {
 	
 	double featureVector[] = new double[Config.NUM_OF_FEATURES];
-    double weightVector[] = new double[Config.NUM_OF_FEATURES];
-	int totalCleared = 0;
+    double weightVector[] =
+	{
+        -95.31233900841222, 
+        -42.05305382351112, 
+        -99.99739966377166, 
+        -4.85838541527682, 
+        -13.156123842248912, 
+        -65.58356114905949, 
+        -1.0089953275670696
+    };
+
     /*
 	 * FakeSateClass is a class which is similar to the State class. The reason to use such a class is 
 	 * to simulate the make move function and get the field from the State.
@@ -97,9 +106,8 @@ public class AgentSkeleton implements Runnable{
     	private boolean lost;
     	private int turn;
     	private int clearedRowsLastTime; //The number of rows cleared by the last move.
-
-        private int landingHeight; // height of column of piece
-        private int pieceHeight; // height of last piece
+        private int lastHeight;
+        private int pieceHeight;
 
         public FakeState(int nextPiece, int turn, int field[][], int top[]) {
             copyField(field);
@@ -124,7 +132,7 @@ public class AgentSkeleton implements Runnable{
                 height = Math.max(height, top[slot + c] - pBottom[piece][orient][c]);
             }
 
-            landingHeight = height;
+            lastHeight = height;
             pieceHeight = pHeight[piece][orient];
 
             // check if game ended
@@ -177,10 +185,13 @@ public class AgentSkeleton implements Runnable{
                 }
             }
             clearedRowsLastTime = rowsCleared;
-            lost = false;
             return true;
         }
         
+        public int[][] legalMoves() {
+            return legalMoves[nextPiece];
+        }
+
         public int[][] getlegalMoves(int pieceNumber) {
             return legalMoves[pieceNumber];
         }
@@ -191,10 +202,6 @@ public class AgentSkeleton implements Runnable{
 
         public int[] getTop() {
             return top;
-        }
-
-        public boolean getLost() {
-            return lost;
         }
 
         public int getTurnNumber() {
@@ -208,16 +215,16 @@ public class AgentSkeleton implements Runnable{
     	public int getColumnHeight(int columnID){
     		return top[columnID];
     	}
-
-        public int getLandingHeight() {
-            return landingHeight;
-        }
-
+    	
+        // evaluators
         public int getPieceHeight() {
             return pieceHeight;
         }
-    	
-        // evaluators
+
+        public int getLandingHeight() {
+            return lastHeight;
+        }
+
         public int getHolesSimple() {
             int countHole = 0;
 
@@ -228,6 +235,7 @@ public class AgentSkeleton implements Runnable{
             }
             return countHole;
         }
+
     	public int getHoles(){
             int countHole = 0;
 
@@ -310,15 +318,13 @@ public class AgentSkeleton implements Runnable{
         public int getRowWithHole() {
             int s = 0;
             for (int r = 0; r < State.ROWS; r++) {
-                boolean hasBlank = false;
-                boolean hasFilled = false;
-                for (int c = 0; c < State.COLS; c++) {
-                    if (field[r][c] == 0) hasBlank = true;
-                    else hasFilled = true;
-                    if (hasFilled && hasBlank) break;
-                }
-                    
-                if (hasFilled && hasBlank) s++;
+                boolean hasHole = false;
+                for (int c = 0; c < State.COLS; c++)
+                    if (field[r][c] == 0) {
+                        hasHole = true;
+                        break;
+                    }
+                if (hasHole) s++;
             }
             return s;
         }
@@ -365,119 +371,96 @@ public class AgentSkeleton implements Runnable{
             }
             return s;
         }
-
     }
 	
     /*
      * Constructor: Use a set of weightVector to initialize the weightVector
      */
-    public AgentSkeleton(double[] _weightVector){
-    	for (int i = 0 ; i < Config.NUM_OF_FEATURES; i++ ){
-    		this.weightVector[i] = _weightVector[i];
-    	}
-    }
 
-    public AgentSkeleton(){
+    public PlayerSkeleton(){
     	//Do nothing is no parameters provided.
     }
     
-    public void setWeight(double[] _weightVector) {
-        for (int i = 0 ; i < Config.NUM_OF_FEATURES; i++ ){
-            this.weightVector[i] = _weightVector[i];
-        }   
-    }
 
 	//implement this function to have a working system
 	public int pickMove(State s, int[][] legalMoves) {
 		int numOfChoice = legalMoves.length;
 		double maxValue = 0;
 		int currentChoice = -1;//-1 means have not choosed
+
 		for (int i = 0; i < numOfChoice; i++){
 			FakeState tmpState = new FakeState(s.getNextPiece(),s.getTurnNumber(),s.getField(),s.getTop());
-			tmpState.makeMove(legalMoves[i][FakeState.ORIENT], legalMoves[i][FakeState.SLOT]);
-			double tmpValue = evaluateState(tmpState);
-			if (tmpValue > maxValue || currentChoice == -1){
-				currentChoice = i;
-				maxValue = tmpValue;
-			}
-		}
-		return currentChoice;
-	}
-
-    public int pickMoveLookAhead(State s, int[][] legalMoves) {
-        int numOfChoice = legalMoves.length;
-        double maxValue = 0;
-        int currentChoice = -1;//-1 means have not choosed
-
-        for (int i = 0; i < numOfChoice; i++){
-            FakeState tmpState = new FakeState(s.getNextPiece(),s.getTurnNumber(),s.getField(),s.getTop());
             
-            boolean alreadyLost = tmpState.makeMove(legalMoves[i][FakeState.ORIENT], legalMoves[i][FakeState.SLOT]);
+			boolean firstContinue = tmpState.makeMove(legalMoves[i][FakeState.ORIENT], legalMoves[i][FakeState.SLOT]);
 
             double sumFitness = 0.0;
             // for each piece to try for this tmpState, construct new second state with this piece
             // get legal moves, pick best out of all Legal moves
             // then sumFitness up, divide by N_PIECES.length
+            
             for (int j = 0; j < State.N_PIECES; j++) {
-                if (!alreadyLost) {
+                if (firstContinue) {
                     int[][] secondLegalMoves = tmpState.getlegalMoves(j);
                     double maxSecondValue = 0.0;
                     int secondChoice = -1;
                     for (int k = 0; k < secondLegalMoves.length; k++) {
                         FakeState secondState = new FakeState(j, tmpState.getTurnNumber(), tmpState.getField(), tmpState.getTop());
-                        secondState.makeMove(secondLegalMoves[k][FakeState.ORIENT], secondLegalMoves[k][FakeState.SLOT]);
+                        boolean secondContinue = secondState.makeMove(secondLegalMoves[k][FakeState.ORIENT], secondLegalMoves[k][FakeState.SLOT]);
                         double secondTmpValue = evaluateState(secondState);
                         if (secondTmpValue > maxSecondValue || secondChoice == -1) {
                             secondChoice = k;
                             maxSecondValue = secondTmpValue;
                         }
                     }
-                    /*
-                    if (j == 0) sumFitness = maxSecondValue;
-                    else if (maxSecondValue < sumFitness) sumFitness = maxSecondValue;
-                    */
+                    
+                    //if (j == 0) sumFitness = maxSecondValue;
+                    //else if (maxSecondValue < sumFitness) sumFitness = maxSecondValue;
+                    
                     sumFitness += maxSecondValue;
                 }
             }
+            
 
             sumFitness = sumFitness / State.N_PIECES;
             double tmpValue = evaluateState(tmpState);
             //if (tmpValue < sumFitness) sumFitness = tmpValue;
+            //sumFitness += tmpValue;
             sumFitness += tmpValue;
-            //sumFitness = tmpValue;
             //sumFitness /= 2;
             if (sumFitness > maxValue || currentChoice == -1){
                 currentChoice = i;
                 maxValue = sumFitness;
             }
             /*
-            double tmpValue = evaluateState(tmpState);
-            if (tmpValue > maxValue || currentChoice == -1){
-                currentChoice = i;
-                maxValue = tmpValue;
-            }
+			double tmpValue = evaluateState(tmpState);
+			if (tmpValue > maxValue || currentChoice == -1){
+				currentChoice = i;
+				maxValue = tmpValue;
+			}
             */
-        }
-        return currentChoice;
-    }
+		}
+		return currentChoice;
+	}
 	
 	/*
 	 * The Heuristics function
 	 * Get all the corresponding feature values based on the state.
 	 */
 	private double evaluateState(FakeState tmpState) {
+        //featureVector[0] = tmpState.getHoles();
         featureVector[0] = tmpState.getHolesSimple();
-		//featureVector[0] = tmpState.getHoles();
         featureVector[1] = tmpState.getRowTransition();
         featureVector[2] = tmpState.getColumnTransition();
         featureVector[3] = tmpState.getWellSums();
         featureVector[4] = tmpState.getClearedRows();
         featureVector[5] = tmpState.getLandingHeight();
         featureVector[6] = tmpState.getHoleDepth();
-        featureVector[7] = tmpState.getLost() ? -1000 : 1000;
-        //featureVector[1] = tmpState.getSumColumnHeight();
-        //featureVector[2] = tmpState.getSumDiffColumnHeight();
+		
+		//featureVector[0] = tmpState.getSumColumnHeight();
+		//featureVector[3] = tmpState.getSumDiffColumnHeight();
+        //featureVector[5] = tmpState.getHoleDepth();
         //featureVector[6] = tmpState.getRowWithHole();
+        //featureVector[1] = tmpState.getClearedRows();
 
 		double finalScore = 0;
 		for (int i = 0; i < Config.NUM_OF_FEATURES; i++){
@@ -486,27 +469,28 @@ public class AgentSkeleton implements Runnable{
 		return finalScore;
 	}
 
-    public int getSimulationFitness() {
-        return totalCleared;
-    }
-
-    @Override
-    public void run() {
-        State s = new State();
-        while(!s.hasLost()) {
-            s.makeMove(this.pickMove(s,s.legalMoves()));
-        }
-        totalCleared = s.getRowsCleared();
-    }
-    
-	public int runSimulation(){
+	public static void main(String[] args) {
 		State s = new State();
+		//new TFrame(s);
+		PlayerSkeleton p = new PlayerSkeleton();
 		while(!s.hasLost()) {
-			s.makeMove(this.pickMove(s,s.legalMoves()));
+			s.makeMove(p.pickMove(s,s.legalMoves()));
+            
+			//s.draw();
+			//s.drawNext(0,0);
+            
+            
+            if (s.getRowsCleared() % 1000 < 5) 
+                System.out.println("Cleared " + s.getRowsCleared());
+            
+            /*
+			try {
+				Thread.sleep(1);
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
+            */
 		}
-        totalCleared = s.getRowsCleared();
-		return s.getRowsCleared();
+		System.out.println("You have completed "+s.getRowsCleared()+" rows.");
 	}
-	
-	
 }

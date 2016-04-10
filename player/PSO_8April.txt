@@ -1,0 +1,12 @@
+PARTICLE COUNT = 500
+FEATURES = 7
+[countHolesSimple, rowTrans, colTrans, wellSums, clearedRows, landingHeight, holeDepth]
+GAMES = 10
+REPULSIVE = false
+MAX_POSITION = 100.0
+MIN_POSITION = -100.0
+GENERATION = 64
+Best fitness: 15526.5
+Best position: 	[-95.31233900841222, -42.05305382351112, -99.99739966377166, -4.85838541527682, -13.156123842248912, -65.58356114905949, -1.0089953275670696]
+Number of evaluations: 32000
+

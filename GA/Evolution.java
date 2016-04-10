@@ -21,19 +21,15 @@ public class Evolution {
             double pCross = Math.random();
 
             if (pCross <= Config.crossoverRate) {    
-                Individual child = crossover(parent1, parent2);    
+                Individual child = uniformCrossover(parent1, parent2);    
                 newPopulation.addIndividual(child);
             }
             else {
                 parent1.mutateOperation(); parent2.mutateOperation();
-                if (parent1.getFitness() > parent2.getFitness())
-                    newPopulation.addIndividual(parent1);
-                else newPopulation.addIndividual(parent2);
+                newPopulation.addIndividual(parent1);
 
                 if (newPopulation.size() < Config.POPULATION) {
-                    if (parent1.getFitness() > parent2.getFitness())
-                        newPopulation.addIndividual(parent2);
-                    else newPopulation.addIndividual(parent1);
+                    newPopulation.addIndividual(parent2);
                 }
                     
             }
@@ -43,6 +39,17 @@ public class Evolution {
     }
 
     // Crossover individuals
+    private static Individual uniformCrossover(Individual indiv1, Individual indiv2) {
+        Individual child = new Individual();
+        for (int i = 0; i < Config.NUM_OF_FEATURES; i++) {
+            double p = Math.random();
+            if (p <= 0.5) child.setGene(i, indiv1.getGene(i));
+            else child.setGene(i, indiv2.getGene(i));            
+        }
+        //child.normalizeGenes();
+        return child;
+    }
+
     private static Individual crossover(Individual indiv1, Individual indiv2) {
         Individual child = new Individual();
         for (int i = 0; i < Config.NUM_OF_FEATURES; i++) {

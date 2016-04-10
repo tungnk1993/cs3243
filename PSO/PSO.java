@@ -7,6 +7,10 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.util.Arrays;
 
+import java.util.Date;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+
 public class PSO {
 
 	public static void main(String[] args) {
@@ -62,7 +66,11 @@ public class PSO {
 
             // Generation
             writer.println("GENERATION = " + countGeneration);
-            writer.println(history);    
+            writer.println(history);
+
+            DateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss");
+            Date date = new Date();
+            writer.println("Last updated: " + dateFormat.format(date));
             writer.close();
         }
         catch (FileNotFoundException e)

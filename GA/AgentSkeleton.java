@@ -159,6 +159,17 @@ public class AgentSkeleton implements Runnable{
         }
         
         // evaluators
+        public int getHolesSimple() {
+            int countHole = 0;
+
+            for (int j = 0; j < State.COLS; j++) {
+                for (int i = 0; i < top[j] - 1; i++)
+                    if ((field[i][j] == 0) && (field[i+1][j] != 0))
+                        countHole++;
+            }
+            return countHole;
+        }
+
         public int getHoles(){
             int countHole = 0;
 
@@ -339,7 +350,8 @@ public class AgentSkeleton implements Runnable{
      * Get all the corresponding feature values based on the state.
      */
     private double evaluateState(FakeState tmpState) {
-        featureVector[0] = tmpState.getHoles();
+        //featureVector[0] = tmpState.getHoles();
+        featureVector[0] = tmpState.getHolesSimple();
         featureVector[1] = tmpState.getRowTransition();
         featureVector[2] = tmpState.getColumnTransition();
         featureVector[3] = tmpState.getWellSums();
