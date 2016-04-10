@@ -397,7 +397,7 @@ public class PlayerSkeleton {
             // for each piece to try for this tmpState, construct new second state with this piece
             // get legal moves, pick best out of all Legal moves
             // then sumFitness up, divide by N_PIECES.length
-            
+            /*
             for (int j = 0; j < State.N_PIECES; j++) {
                 if (firstContinue) {
                     int[][] secondLegalMoves = tmpState.getlegalMoves(j);
@@ -420,8 +420,8 @@ public class PlayerSkeleton {
                 }
             }
             
-
             sumFitness = sumFitness / State.N_PIECES;
+            */
             double tmpValue = evaluateState(tmpState);
             //if (tmpValue < sumFitness) sumFitness = tmpValue;
             //sumFitness += tmpValue;
